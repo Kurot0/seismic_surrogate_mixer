@@ -65,6 +65,7 @@ seismic_surrogate_mixer/
 │   ├── data2pkl.py
 │   ├── make_label.py
 │   ├── make_mask.py
+│   ├── modelinfo.py
 │   ├── pkl2pt.py
 │   ├── pt2pt.py
 │   └── visualize.py
@@ -73,18 +74,9 @@ seismic_surrogate_mixer/
     ├── crossValidation.py
     ├── evaluate.py
     ├── inference.py
-    ├── modelinfo.py
     ├── ssimloss.py
     ├── train.py
     └── models/
-        ├── afno.py
-        ├── convit.py
-        ├── ffno.py
-        ├── mifno.py
-        ├── mlpmixer.py
-        ├── mlpmixer_film.py
-        ├── mlpmixer_film_branch.py
-        └── uno.py
 ```
 
 ---
