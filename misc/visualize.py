@@ -9,7 +9,7 @@ import argparse
 def save_images(data_path, save_dir, mask_path, apply_mask, show_colorbar):
     os.makedirs(save_dir, exist_ok=True)
     data_4d = torch.load(data_path, weights_only=False).numpy()
-    batch_size, num_channels, height, width = data_4d.shape
+    batch_size, num_channels, _, _ = data_4d.shape
 
     mask = None
     if apply_mask == 0 and mask_path is not None:
@@ -67,7 +67,7 @@ def save_scatter_plots(true_data_path, pred_data_path, mask_path, save_dir):
 
     true_data = torch.load(true_data_path, weights_only=False).numpy()
     pred_data = torch.load(pred_data_path, weights_only=False).numpy()
-    batch_size, num_channels, height, width = true_data.shape
+    batch_size, num_channels, _, _ = true_data.shape
 
     mask = torch.from_numpy(np.array(Image.open(mask_path))).float() / 255.0
 
@@ -121,7 +121,7 @@ def main():
     save_dir = 'data/images'
     mask_path = 'data/exp_data/sea_400.png'
     true_data_path = 'data/exp_data/cv_data/crossValidation_all0/y_test.pt'
-    pred_data_path = 'data/exp_data/cv_data/crossValidation_all0/y_test.pt'
+    pred_data_path = 'data/exp_data/cv_data/crossValidation_all0/y_pred.pt'
 
     save_images(pred_data_path, save_dir, mask_path, args.apply_mask, args.show_colorbar)
     save_scatter_plots(true_data_path, pred_data_path, mask_path, save_dir)

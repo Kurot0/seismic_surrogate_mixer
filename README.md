@@ -13,7 +13,6 @@ This is a temporary project description.
     - [Data Preparation](#data-preparation)
     - [Training and Evaluation](#training-and-evaluation)
     - [Example Results](#example-results)
-
 ---
 
 ## Requirements
@@ -27,8 +26,8 @@ This is a temporary project description.
 ### 1. Clone the repository
 
 ```bash
-git clone git@github.com:Kurot0/research.git
-cd research
+git clone git@github.com:Kurot0/seismic_surrogate_mixer.git
+cd seismic_surrogate_mixer
 ```
 
 ### 2. Install required Python packages
@@ -52,7 +51,7 @@ Please download and extract the following data sets, and place the extracted fil
 
 The overall directory structure of this project is as follows:
 ```text
-research/
+seismic_surrogate_mixer/
 ├── config.yaml
 │
 ├── data/
