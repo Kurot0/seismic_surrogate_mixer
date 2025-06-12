@@ -52,7 +52,7 @@ Please download and extract the following data sets, and place the extracted fil
 The overall directory structure of this project is as follows:
 ```text
 seismic_surrogate_mixer/
-├── config.yaml
+├── config.yaml           # Experiment settings 
 │
 ├── data/
 │   ├── raw_data/         # Raw seismic simulation & subsurface‑structure data
@@ -88,7 +88,7 @@ seismic_surrogate_mixer/
 The following preprocessing scripts should be executed in the following order to prepare the training and evaluation data:
 
 ```bash
-# 1️. Create ocean mask images
+# 1️. Create sea mask images
 python misc/make_mask.py
 
 # 2️. Create labels for data splitting (for cross-validation and zero-shot learning)
