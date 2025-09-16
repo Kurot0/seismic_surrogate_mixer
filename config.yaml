@@ -6,7 +6,7 @@ result_base_dir: data/result
 model_module: models.mlpmixer_film_branch
 model_class: Network
 
-device: 0
+device: 1
 
 seed: 42
 batch_size: 4
@@ -38,7 +38,7 @@ mlp_ratio: 4
 gpsa_interval: [1, 3]
 use_pos_embed: True
 
-img_size_train: [200, 200]
+img_size_train: [400, 400]
 modes_x: 100
 modes_y: 100
 n_layers: 16

@@ -77,7 +77,8 @@ seismic_surrogate_mixer/
 
 ### Training and Inference
 
-Experiment settings such as model architecture and hyperparameters are defined in the `config.yaml` file. For example, in a multi-shot learning setting with cross-validation using the MLP-Mixer model, you can configure `config.yaml` as follows:
+Experiment settings such as model architecture and hyperparameters are defined in the `config.yaml` file. In particular, the dataset to be used for the experiment is specified in `data_path`, and the model to be used is specified in `model_module`. 
+For example, in a multi-shot learning setting with cross-validation using the MLP-Mixer model, you can configure `config.yaml` as follows:
 
 ```yaml
 data_path: data/exp_data/cv_data_multishot
