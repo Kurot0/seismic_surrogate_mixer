@@ -39,7 +39,7 @@ pip install -r requirements.txt
 
 ### 3. Download the data
 
-Download all files from [google drive](https://drive.google.com/drive/folders/1H4WSzDXt68DseMZUBuZzXn6YRqCF3Ztn?usp=drive_link) and place them under the `./data/exp_data/` folder. Please extract the files after downloading.
+Download and extract all files from [google drive](https://drive.google.com/drive/folders/1H4WSzDXt68DseMZUBuZzXn6YRqCF3Ztn?usp=drive_link) and place them under the `./data/exp_data/` folder.
 
 ---
 
