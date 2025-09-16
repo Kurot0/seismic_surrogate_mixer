@@ -87,7 +87,7 @@ class Network(nn.Module):
     def forward(self, x, underground_data, **kwargs):
         u = underground_data[:, self.underground_channels, :, :]
         u = F.interpolate(u, size=self.img_size_in, mode='bicubic', align_corners=True)
-        u = u.repeat(x.shape[0], 1, 1, 1)
+        u = u.expand(x.size(0), -1, -1, -1)
 
         x = torch.cat([x, u], dim=1)
         x = self.patch_embed(x)

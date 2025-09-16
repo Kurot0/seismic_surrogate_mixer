@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 
 class SpectralConv2d_Uno(nn.Module):
-    def __init__(self, in_codim, out_codim, dim1, dim2,modes1 = None, modes2 = None):
+    def __init__(self, in_codim, out_codim, dim1, dim2, modes1 = None, modes2 = None):
         super(SpectralConv2d_Uno, self).__init__()
 
         in_codim = int(in_codim)
@@ -25,7 +25,15 @@ class SpectralConv2d_Uno(nn.Module):
         self.weights2 = nn.Parameter(self.scale * (torch.randn(in_codim, out_codim, self.modes1, self.modes2, dtype=torch.cfloat)))
 
     def compl_mul2d(self, input, weights):
-        return torch.einsum("bixy,ioxy->boxy", input, weights)
+        a, b = input.real, input.imag
+        c, d = weights.real, weights.imag
+        ac = torch.einsum("bixy,ioxy->boxy", a, c)
+        bd = torch.einsum("bixy,ioxy->boxy", b, d)
+        ad = torch.einsum("bixy,ioxy->boxy", a, d)
+        bc = torch.einsum("bixy,ioxy->boxy", b, c)
+        real = ac - bd
+        imag = ad + bc
+        return torch.complex(real, imag)
 
     def forward(self, x, dim1 = None,dim2 = None):
         if dim1 is not None:
@@ -56,12 +64,6 @@ class pointwise_op_2D(nn.Module):
             dim1 = self.dim1
             dim2 = self.dim2
         x_out = self.conv(x)
-
-        #ft = torch.fft.rfft2(x_out)
-        #ft_u = torch.zeros_like(ft)
-        #ft_u[:dim1//2-1,:dim2//2-1] = ft[:dim1//2-1,:dim2//2-1]
-        #ft_u[-(dim1//2-1):,:dim2//2-1] = ft[-(dim1//2-1):,:dim2//2-1]
-        #x_out = torch.fft.irfft2(ft_u)
         
         x_out = torch.nn.functional.interpolate(x_out, size = (dim1, dim2),mode = 'bicubic',align_corners=True, antialias=True)
         return x_out

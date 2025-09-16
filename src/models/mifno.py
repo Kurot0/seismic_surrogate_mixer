@@ -36,14 +36,19 @@ class MLP(nn.Module):
     def forward(self,x): return self.seq(x)
 
 class SpectralConv2d(nn.Module):
-    def __init__(self, in_dim, out_dim, modes_x, modes_y, mlp_factor=2):
+    def __init__(self, in_dim, out_dim, modes_x, modes_y, factor):
         super().__init__()
         self.in_dim,self.out_dim = in_dim,out_dim
         self.modes_x,self.modes_y = modes_x,modes_y
-        self.weight_y = nn.Parameter(torch.randn(in_dim,out_dim,modes_y,2)*0.02)
-        self.weight_x = nn.Parameter(torch.randn(in_dim,out_dim,modes_x,2)*0.02)
-        self.backcast = MLP(out_dim, mlp_factor)
-    def complex_weight(self,w): return torch.view_as_complex(w)
+        weight_y = torch.empty(in_dim, out_dim, modes_y, 2)
+        nn.init.xavier_normal_(weight_y)
+        self.weight_y = nn.Parameter(weight_y)
+        weight_x = torch.empty(in_dim, out_dim, modes_x, 2)
+        nn.init.xavier_normal_(weight_x)
+        self.weight_x = nn.Parameter(weight_x)
+        self.backcast = MLP(out_dim, factor)
+    def complex_weight(self,w): 
+        return torch.view_as_complex(w)
     def forward_fourier(self,x):
         B,C,H,W = x.shape
         x_ft = torch.fft.rfft(x,dim=-1,norm="ortho")
@@ -83,7 +88,7 @@ class Network(nn.Module):
         img_size_train=None,
         in_chans=1, out_chans=1,
         underground_channels=None,
-        n_layers=8, mlp_factor=2,
+        n_layers=8, factor=1,
         ff_weight_norm=False, **kwargs):
         super().__init__()
         assert n_layers%2==0, "n_layers must be even"
@@ -97,20 +102,25 @@ class Network(nn.Module):
         self.in_proj_src = WNLinear(in_chans+2, embed_dim, wnorm=ff_weight_norm)
         self.in_proj_geo = WNLinear(self.underground_dim+2, embed_dim, wnorm=ff_weight_norm)
 
-        self.front_layers = nn.ModuleList(
-            [SpectralConv2d(embed_dim, embed_dim, modes_x, modes_y, mlp_factor)
+        self.front_layers_a = nn.ModuleList(
+            [SpectralConv2d(embed_dim, embed_dim, modes_x, modes_y, factor)
              for _ in range(self.half_layers)])
-        self.back_layers = nn.ModuleList(
-            [SpectralConv2d(embed_dim*3, embed_dim*3, modes_x, modes_y, mlp_factor)
+        self.front_layers_g = nn.ModuleList(
+            [SpectralConv2d(embed_dim, embed_dim, modes_x, modes_y, factor)
              for _ in range(self.half_layers)])
 
         self.fusion = ElementwiseFusion()
-        self.projection = ChannelWiseProjection(embed_dim*3, out_chans, wnorm=ff_weight_norm)
+        self.fusion_linear = WNLinear(embed_dim * 3, embed_dim, wnorm=ff_weight_norm)
+
+        self.back_layers = nn.ModuleList(
+            [SpectralConv2d(embed_dim, embed_dim, modes_x, modes_y, factor)
+             for _ in range(self.half_layers)])
+
+        self.projection = ChannelWiseProjection(embed_dim, out_chans, wnorm=ff_weight_norm)
 
     @staticmethod
     def _resize(x, size):
-        return F.interpolate(x, size=size, mode="bicubic",
-                             align_corners=True, antialias=True)
+        return F.interpolate(x, size=size, mode="bilinear", align_corners=True, antialias=True)
 
     def _get_grid(self, shape, device):
         B,X,Y = shape[0], shape[1], shape[2]
@@ -135,11 +145,13 @@ class Network(nn.Module):
         a = self._encode(x, self.in_proj_src,  work_size)
         g = self._encode(g, self.in_proj_geo, work_size)
 
-        for layer in self.front_layers:
-            a = a + layer(a)
-            g = g + layer(g)
+        for layer_a, layer_g in zip(self.front_layers_a, self.front_layers_g):
+            a = a + layer_a(a)
+            g = g + layer_g(g)
 
-        z = self.fusion(a,g)
+        z = self.fusion(a, g)
+        z = self.fusion_linear(z)
+
         for layer in self.back_layers:
             z = z + layer(z)
 

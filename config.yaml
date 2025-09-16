@@ -1,18 +1,18 @@
-data_path: data/exp_data/cv_data
+data_path: data/exp_data/cv_data_multishot
 underground_data_path: data/exp_data/upperDepth_lonlat_400.pt
 mask_path: data/exp_data/sea_400.png 
 result_base_dir: data/result
 
-model_module: models.mlpmixer
+model_module: models.mlpmixer_film_branch
 model_class: Network
 
-device: 1
+device: 0
 
 seed: 42
 batch_size: 4
 num_epochs: 300
 patience: 10
-learning_rate: 0.001
+learning_rate: 0.002
 cross_validation_folds: 10
 
 img_size_in: [720, 896]
@@ -25,12 +25,12 @@ in_chans: 6
 embed_dim: 64
 tokens_mlp_dim: 256
 channels_mlp_dim: 1024
-num_blocks: 8
+num_blocks: 16
 f_hidden: 4
 drop_rate: 0.1
 
 fno_blocks: 8
-fno_softshrink: 0.1 
+fno_softshrink: 0.3
 
 depth: 4
 num_heads: 4
@@ -41,8 +41,8 @@ use_pos_embed: True
 img_size_train: [200, 200]
 modes_x: 100
 modes_y: 100
-mlp_factor: 1
-n_layers: 8
+n_layers: 16
+factor: 1
 share_weight: false
 ff_weight_norm: true
 n_ff_layers: 2

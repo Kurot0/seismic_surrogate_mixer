@@ -113,52 +113,106 @@ class Network(nn.Module):
                  tokens_mlp_dim, channels_mlp_dim, num_blocks, drop_rate, underground_channels, **kwargs):
         super().__init__()
         num_patches = (img_size_in[0] // patch_size[0]) * (img_size_in[1] // patch_size[1])
+        self.img_size_in = img_size_in
+        self.out_chans = out_chans
+        self.use_streams_inference = True
+        self.use_streams_training  = True
+        self._streams = None
+        self._streams_device = None
 
-        self.patch_embed   = PatchEmbed(patch_size, in_chans, embed_dim)
+        self.patch_embed = PatchEmbed(patch_size, in_chans, embed_dim)
         self.initial_mixer = nn.Sequential(
             *[
-                MixerBlock(embed_dim, num_patches,
-                           tokens_mlp_dim, channels_mlp_dim,
-                           drop=drop_rate)
+                MixerBlock(embed_dim, num_patches, tokens_mlp_dim, channels_mlp_dim, drop=drop_rate)
                 for _ in range(num_blocks // 2)
             ]
         )
 
-        self.upsample_ug = nn.Upsample(size=img_size_in, mode='bilinear', align_corners=True)
+        self.upsample_ug    = nn.Upsample(size=img_size_in, mode='bilinear', align_corners=True)
         self.ug_patch_embed = PatchEmbed(patch_size, len(underground_channels), embed_dim)
-        self.ug_mixer       = MixerBlock(embed_dim, num_patches,
-                                         tokens_mlp_dim, channels_mlp_dim)
+        self.ug_mixer       = MixerBlock(embed_dim, num_patches, tokens_mlp_dim, channels_mlp_dim)
 
         latter_blocks = num_blocks - num_blocks // 2
         self.branches = nn.ModuleList([
-            Branch(
-                embed_dim=embed_dim,
-                num_patches=num_patches,
-                tokens_mlp_dim=tokens_mlp_dim,
-                channels_mlp_dim=channels_mlp_dim,
-                latter_blocks=latter_blocks,
-                patch_size=patch_size,
-                img_size_in=img_size_in,
-                drop_rate=drop_rate,
-            )
+            Branch(embed_dim, num_patches, tokens_mlp_dim, channels_mlp_dim,
+                   latter_blocks, patch_size, img_size_in, drop_rate)
             for _ in range(out_chans)
         ])
 
-        self.downsample = nn.Upsample(size=img_size_out, mode='bilinear', align_corners=True)
+        self.downsample = nn.Upsample(size=img_size_out, mode='bicubic', align_corners=True)
+
+    def _ensure_streams(self, device):
+        dev = device if isinstance(device, torch.device) else torch.device(device)
+        need_new = False
+        if self._streams is None:
+            need_new = True
+        elif len(self._streams) != self.out_chans:
+            need_new = True
+        elif self._streams_device != dev:
+            need_new = True
+        if need_new:
+            self._streams = [torch.cuda.Stream(device=dev) for _ in range(self.out_chans)]
+            self._streams_device = dev
+        return self._streams
 
     def forward(self, x, underground_data, **kwargs):
-        ug = self.upsample_ug(underground_data.to(x.device))
+        x = x.contiguous(memory_format=torch.channels_last)
+
+        ug = self.upsample_ug(underground_data.to(x.device).contiguous(memory_format=torch.channels_last))
         ug = self.ug_patch_embed(ug)
         ug = self.ug_mixer(ug)
 
         x = self.patch_embed(x)
         x = self.initial_mixer(x)
 
-        branch_outputs = [
-            branch(x, ug.expand_as(x))
-            for branch in self.branches
-        ]
-        x = torch.cat(branch_outputs, dim=1)
+        ug_exp = ug.expand_as(x)
 
+        B = x.size(0)
+        Hin, Win = self.img_size_in
+        device, dtype = x.device, x.dtype
+        cuda_ok = torch.cuda.is_available() and x.is_cuda
+
+        if (not self.training) and self.use_streams_inference and cuda_ok:
+            x_buf = torch.empty(
+                (B, self.out_chans, Hin, Win),
+                device=device, dtype=dtype
+            ).contiguous(memory_format=torch.channels_last)
+
+            streams = self._ensure_streams(device)
+            cur = torch.cuda.current_stream(device=device)
+            for i, (br, st) in enumerate(zip(self.branches, streams)):
+                st.wait_stream(cur)
+                with torch.cuda.stream(st):
+                    xi = br(x, ug_exp)
+                    xi = xi.to(memory_format=torch.channels_last)
+                    x_buf.narrow(1, i, 1).copy_(xi, non_blocking=True)
+            for st in streams:
+                cur.wait_stream(st)
+
+            x = self.downsample(x_buf)
+            return x
+
+        if self.training and self.use_streams_training and cuda_ok:
+            streams = self._ensure_streams(device)
+            cur = torch.cuda.current_stream(device=device)
+
+            outs = [None] * self.out_chans
+            for i, (br, st) in enumerate(zip(self.branches, streams)):
+                st.wait_stream(cur)
+                with torch.cuda.stream(st):
+                    outs[i] = br(x, ug_exp)
+            for st in streams:
+                cur.wait_stream(st)
+
+            x = torch.cat(outs, dim=1)
+            x = x.contiguous(memory_format=torch.channels_last)
+            x = self.downsample(x)
+            return x
+
+        outs = []
+        for br in self.branches:
+            outs.append(br(x, ug_exp))
+        x = torch.cat(outs, dim=1)
+        x = x.contiguous(memory_format=torch.channels_last)
         x = self.downsample(x)
         return x

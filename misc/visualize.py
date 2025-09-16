@@ -2,8 +2,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-from PIL import Image
 import argparse
+from PIL import Image
+from pdf2image import convert_from_path
 
 
 def save_images(data_path, save_dir, mask_path, apply_mask, show_colorbar):
@@ -44,10 +45,19 @@ def save_images(data_path, save_dir, mask_path, apply_mask, show_colorbar):
             plt.yticks(fontsize=14)
 
             img_path = os.path.join(channel_dir, f'{i+1:03}.png')
+            img_path = os.path.join(channel_dir, f'{i+1:03}.pdf')
+
             plt.savefig(img_path, bbox_inches='tight')
             plt.close()
 
-            images_for_concat.append(Image.open(img_path))
+            ext = os.path.splitext(img_path)[1].lower()
+            if ext == '.pdf':
+                images = convert_from_path(img_path)
+                img = images[0]
+            else:
+                img = Image.open(img_path)
+
+            images_for_concat.append(img)
 
         widths, heights = zip(*(img.size for img in images_for_concat))
         total_width = sum(widths)

@@ -1,23 +1,24 @@
 # Seismic Ground Motion Prediction using Deep Learning-based Surrogate Models
 
-This is a temporary project description.
+This reposititory provides data and codes used in the paper Multi-MLP-Mixer based surrogate model for seismic ground-motion with spatial source and geological parameters.
 
 ---
 
 ## Contents
 
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Directory Structure](#directory-structure)
-- [Usage](#usage)
-    - [Data Preparation](#data-preparation)
-    - [Training and Evaluation](#training-and-evaluation)
-    - [Example Results](#example-results)
+* [Requirements](#requirements)
+* [Installation](#installation)
+* [Directory Structure](#directory-structure)
+* [Usage](#usage)
+
+  * [Training and Evaluation](#training-and-evaluation)
+  * [Example Results](#example-results)
+
 ---
 
 ## Requirements
 
-- Python 3.9
+* Python 3.9
 
 ---
 
@@ -36,38 +37,25 @@ cd seismic_surrogate_mixer
 pip install -r requirements.txt
 ```
 
-### 3 Download the data
+### 3. Download the data
 
-Please download and extract the following data sets, and place the extracted files under the `data/raw_data/`:
+Download all files from [google drive](https://drive.google.com/drive/folders/1H4WSzDXt68DseMZUBuZzXn6YRqCF3Ztn?usp=drive_link) and place them under the `./data/exp_data/` folder. Please extract the files after downloading.
 
-| Data set                              | Google Drive URL                                                                                                                                                                                                        |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Seismic ground‑motion simulation data | [https://drive.google.com/drive/u/2/folders/1GaLdsRwsOuoXumnlRe-drB-SfKlY9thV?dmr=1\&ec=wgc-drive-hero-goto](https://drive.google.com/drive/u/2/folders/1GaLdsRwsOuoXumnlRe-drB-SfKlY9thV?dmr=1&ec=wgc-drive-hero-goto) |
-| Subsurface‑structure model data       | [https://drive.google.com/file/d/1DAiTbJEAKHoQi7zmTjyVBTaXFheSqVhs/view](https://drive.google.com/file/d/1DAiTbJEAKHoQi7zmTjyVBTaXFheSqVhs/view)   
-
----   
+---
 
 ## Directory Structure
 
 The overall directory structure of this project is as follows:
+
 ```text
 seismic_surrogate_mixer/
-├── config.yaml           # Experiment settings 
+├── config.yaml           # Experiment settings
 │
-├── data/
-│   ├── raw_data/         # Raw seismic simulation & subsurface‑structure data
-│   ├── prep_data/        # Pre‑processed data
-│   ├── exp_data/         # Experimental data (created by scripts below)
-│   └── result/           # Trained models & result files
+├── data/                 # Data directory
+│   ├── exp_data/
+│   └── result/
 │
 ├── misc/                 # Utility / preprocessing scripts
-│   ├── csv2pt.py
-│   ├── data2pkl.py
-│   ├── make_label.py
-│   ├── make_mask.py
-│   ├── modelinfo.py
-│   ├── pkl2pt.py
-│   ├── pt2pt.py
 │   └── visualize.py
 │
 └── src/                  # Core source code
@@ -83,32 +71,19 @@ seismic_surrogate_mixer/
 
 ## Usage
 
-### Data Preparation
-
-The following preprocessing scripts should be executed in the following order to prepare the training and evaluation data:
-
-```bash
-# 1️. Create sea mask images
-python misc/make_mask.py
-
-# 2️. Create labels for data splitting (for cross-validation and zero-shot learning)
-python misc/make_label.py
-
-# 3️. Preprocess and split seismic ground motion simulation data
-python misc/data2pkl.py
-python misc/pkl2pt.py
-
-# 4️. Preprocess subsurface structure model data
-python misc/csv2pt.py
-python misc/pt2pt.py
-```
-
-- Multi‑shot learning data:  `data/exp_data/cv_data/`
-- Zero‑shot learning data: `data/exp_data/cv_data_zeroshot/`
-
 ### Training and Inference
 
-Experiment settings such as model architecture and hyperparameters are defined in the `config.yaml` file.
+Experiment settings such as model architecture and hyperparameters are defined in the `config.yaml` file. For example, in a multi-shot learning setting with cross-validation using the MLP-Mixer model, you can configure `config.yaml` as follows:
+
+```yaml
+data_path: data/exp_data/cv_data_multishot
+underground_data_path: data/exp_data/upperDepth_lonlat_400.pt
+mask_path: data/exp_data/sea_400.png
+result_base_dir: data/result
+
+model_module: models.mlpmixer
+model_class: Network
+```
 
 To run training and inference with cross-validation:
 
@@ -116,15 +91,16 @@ To run training and inference with cross-validation:
 python src/crossValidation.py
 ```
 
-- Trained models and experiment results will be saved in: `data/result/`
+* Trained models and experiment results will be saved in: `data/result/`
 
 ### Example Results
 
-- **Loss Curves (Training / Validation)**
+* **Loss Curves (Training / Validation)**
 
 ![Loss Curves](./img/loss_curve_example.png)
 
-- **Quantitative Evaluation**
+* **Quantitative Evaluation**
+
 ```
 Individual Results: (31.784717, 0.937626), (31.973283, 0.943903), (32.270648, 0.945620), (31.583992, 0.943013), (31.749764, 0.947818), (31.664950, 0.946627), (32.522364, 0.947405), (32.312085, 0.945339), (33.213400, 0.947383), (32.790078, 0.940169)
 Combined PSNR: 32.18652820587158
@@ -161,19 +137,19 @@ Avarage Inference time: 1.3644 milliseconds
 ### Visualization
 
 You can also perform qualitative evaluation and visualization of the prediction results by running:
+
 ```bash
 python misc/visualize.py
 ```
 
-- **Seismic Ground Motion Images (Ground truth | Prediction)**
+* **Seismic Ground Motion Images (Ground truth | Prediction)**
 
-| Ground Truth | Prediction |
-|:------------:|:----------:|
+|                  Ground Truth                 |                    Prediction                   |
+| :-------------------------------------------: | :---------------------------------------------: |
 | <img src="./img/seismic_gt.png" width="300"/> | <img src="./img/seismic_pred.png" width="300"/> |
 
-- **Scatter Plots (Ground truth | Prediction)**
+* **Scatter Plots (Ground truth | Prediction)**
 
-| Ground Truth | Prediction |
-|:------------:|:----------:|
+|                  Ground Truth                 |                    Prediction                   |
+| :-------------------------------------------: | :---------------------------------------------: |
 | <img src="./img/scatter_gt.png" width="300"/> | <img src="./img/scatter_pred.png" width="300"/> |
-
