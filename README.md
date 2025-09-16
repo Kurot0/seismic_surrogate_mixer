@@ -49,16 +49,20 @@ The overall directory structure of this project is as follows:
 
 ```text
 seismic_surrogate_mixer/
-├── config.yaml           # Experiment settings
+├── config.yaml                 # Experiment settings 
 │
-├── data/                 # Data directory
-│   ├── exp_data/
-│   └── result/
+├── data/                       # Data directory
+│   ├── exp_data/               # Experimental data
+│   │   ├── cv_data_multishot/  # Multi-shot learning datasets for cross-validation
+│   │   ├── cv_data_oneshot/    # One-shot learning datasets for cross-validation
+│   │   ├── sea_400.png
+│   │   └── upperDepth_lonlat_400.pt
+│   └── result/                 # Trained models & result files
 │
-├── misc/                 # Utility / preprocessing scripts
-│   └── visualize.py
+├── misc/
+│   └── visualize.py            # Visualization scripts
 │
-└── src/                  # Core source code
+└── src/                        # Core source code
     ├── crossValidation.py
     ├── evaluate.py
     ├── inference.py
