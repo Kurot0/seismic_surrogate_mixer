@@ -1,6 +1,6 @@
 # Seismic Ground Motion Prediction using Deep Learning-based Surrogate Models
 
-This reposititory provides data and codes used in the paper Multi-MLP-Mixer based surrogate model for seismic ground-motion with spatial source and geological parameters.
+This repository provides data and codes used in the paper *Multi-MLP-Mixer based surrogate model for seismic ground-motion with spatial source and geological parameters*.
 
 ---
 
@@ -11,8 +11,9 @@ This reposititory provides data and codes used in the paper Multi-MLP-Mixer base
 * [Directory Structure](#directory-structure)
 * [Usage](#usage)
 
-  * [Training and Evaluation](#training-and-evaluation)
+  * [Training and Inference](#training-and-inference)
   * [Example Results](#example-results)
+  * [Visualization](#visualization)
 
 ---
 
@@ -49,7 +50,7 @@ The overall directory structure of this project is as follows:
 
 ```text
 seismic_surrogate_mixer/
-├── config.yaml                 # Experiment settings 
+├── config.yaml                 # Experiment settings
 │
 ├── data/                       # Data directory
 │   ├── exp_data/               # Experimental data
@@ -60,7 +61,7 @@ seismic_surrogate_mixer/
 │   └── result/                 # Trained models & result files
 │
 ├── misc/
-│   └── visualize.py            # Visualization scripts
+│   └── visualize.py            # Visualization script
 │
 └── src/                        # Core source code
     ├── crossValidation.py
@@ -68,7 +69,13 @@ seismic_surrogate_mixer/
     ├── inference.py
     ├── ssimloss.py
     ├── train.py
-    └── models/
+    └── models/                 # Model definitions
+        ├── afno.py             # Adaptive Fourier Neural Operator [Guibas et al., ICLR 2022]
+        ├── convit.py           # Convolutional Vision Transformer [d’Ascoli et al., ICML 2021]
+        ├── uno.py              # U-shaped Neural Operator [Lehmann et al., UNCECOMP 2023]
+        ├── mifno.py            # Multiple-Input Fourier Neural Operator [Lehmann et al., JCP 2025]
+        ├── mlpmixer.py         # MLP-Mixer [Tolstikhin et al., NeurIPS 2021]
+        └── multimlpmixer.py    # Proposed Multi-MLP-Mixer (extension of MLP-Mixer in this paper)
 ```
 
 ---
@@ -77,8 +84,8 @@ seismic_surrogate_mixer/
 
 ### Training and Inference
 
-Experiment settings such as model architecture and hyperparameters are defined in the `config.yaml` file. In particular, the dataset to be used for the experiment is specified in `data_path`, and the model to be used is specified in `model_module`. 
-For example, in a multi-shot learning setting with cross-validation using the MLP-Mixer model, you can configure `config.yaml` as follows:
+Experiment settings such as model architecture and hyperparameters are defined in the `config.yaml` file. In particular, the dataset to be used for the experiment is specified in `data_path`, and the model to be used is specified in `model_module`.
+For example, in a multi-shot learning setting with cross-validation using the proposed Multi-MLP-Mixer model, you can configure `config.yaml` as follows:
 
 ```yaml
 data_path: data/exp_data/cv_data_multishot
@@ -86,7 +93,7 @@ underground_data_path: data/exp_data/upperDepth_lonlat_400.pt
 mask_path: data/exp_data/sea_400.png
 result_base_dir: data/result
 
-model_module: models.mlpmixer
+model_module: models.multimlpmixer
 model_class: Network
 ```
 
@@ -97,6 +104,21 @@ python src/crossValidation.py
 ```
 
 * Trained models and experiment results will be saved in: `data/result/`
+* The directory name format is: `exp_YYMMDDHHMMSS_setting_model` (e.g., `exp_250918153030_multishot_multimlpmixer/`).
+* Inside each directory:
+
+  * `checkpoint/` : Model weights for each fold
+  * `loss_graph/` : Loss curves for each fold
+  * `pred_data/` : Inference results
+  * `config.yaml` : Copy of experiment configuration
+  * `result.txt` : Quantitative evaluation results
+* Saved weights can also be reused for inference. Example:
+
+```bash
+python src/inference.py data/result/exp_250918153030_multishot_multimlpmixer
+```
+
+---
 
 ### Example Results
 
@@ -139,13 +161,21 @@ Total Inference time: 0.8568 seconds
 Avarage Inference time: 1.3644 milliseconds
 ```
 
+---
+
 ### Visualization
 
 You can also perform qualitative evaluation and visualization of the prediction results by running:
 
 ```bash
-python misc/visualize.py
+python misc/visualize.py data/result/exp_250918153030_multishot_multimlpmixer/pred_data/cv0_pred.pt --show_colorbar 1
 ```
+
+* Arguments:
+
+  * `pred_data_path` (positional): Path to the model prediction file to visualize
+  * `--apply_mask`: If set to a nonzero value, no mask is applied
+  * `--show_colorbar`: If set to a nonzero value, a colorbar is displayed
 
 * **Seismic Ground Motion Images (Ground truth | Prediction)**
 

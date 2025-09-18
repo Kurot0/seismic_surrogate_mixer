@@ -3,7 +3,7 @@ underground_data_path: data/exp_data/upperDepth_lonlat_400.pt
 mask_path: data/exp_data/sea_400.png 
 result_base_dir: data/result
 
-model_module: models.mlpmixer_film_branch
+model_module: models.multimlpmixer
 model_class: Network
 
 device: 1
@@ -25,7 +25,7 @@ in_chans: 6
 embed_dim: 64
 tokens_mlp_dim: 256
 channels_mlp_dim: 1024
-num_blocks: 16
+num_blocks: 8
 f_hidden: 4
 drop_rate: 0.1
 
