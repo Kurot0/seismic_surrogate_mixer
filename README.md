@@ -40,7 +40,10 @@ pip install -r requirements.txt
 
 ### 3. Download the data
 
-Download and extract all files from [google drive](https://drive.google.com/drive/folders/1H4WSzDXt68DseMZUBuZzXn6YRqCF3Ztn?usp=drive_link) and place them under the `./data/` folder.
+Download and extract all files from [google drive](https://drive.google.com/drive/folders/1H4WSzDXt68DseMZUBuZzXn6YRqCF3Ztn?usp=drive_link) and place them under the `./` folder.
+
+The `result/` directory in the google drive contains the pretrained weights used in the experiments reported in the paper. 
+In particular, for the one-shot Multi-MLP-Mixer model, three variants trained with different dropout rates (0.1, 0.3, 0.5) are included.
 
 ---
 
@@ -50,32 +53,34 @@ The overall directory structure of this project is as follows:
 
 ```text
 seismic_surrogate_mixer/
-├── config.yaml                 # Experiment settings
+├── config.yaml                         # Experiment settings
 │
-├── data/                       # Data directory
-│   ├── exp_data/               # Experimental data
-│   │   ├── cv_data_multishot/  # Multi-shot learning datasets for cross-validation
-│   │   ├── cv_data_oneshot/    # One-shot learning datasets for cross-validation
-│   │   ├── sea_400.png
-│   │   └── upperDepth_lonlat_400.pt
-│   └── result/                 # Trained models & result files
+├── data/                               # Data directory
+│   ├── cv_data_multishot/              # Multi-shot learning datasets for cross-validation
+│   ├── cv_data_oneshot/                # One-shot learning datasets for cross-validation
+│   ├── sea_400.png                     # Sea area mask
+│   ├── upperDepth_lonlat_400.pt        # Geological parameter data
+│   ├── labels_dictionary_multishot.pkl # Label data for multi-shot dataset
+│   └── labels_dictionary_oneshot.pkl   # Label data for one-shot dataset
+│
+├── result/                             # Trained models & result files
 │
 ├── misc/
-│   └── visualize.py            # Visualization script
+│   └── visualize.py                    # Visualization script
 │
-└── src/                        # Core source code
+└── src/                                # Core source code
     ├── crossValidation.py
     ├── evaluate.py
     ├── inference.py
     ├── ssimloss.py
     ├── train.py
-    └── models/                 # Model definitions
-        ├── afno.py             # Adaptive Fourier Neural Operator [Guibas et al., ICLR 2022]
-        ├── convit.py           # Convolutional Vision Transformer [d’Ascoli et al., ICML 2021]
-        ├── uno.py              # U-shaped Neural Operator [Lehmann et al., UNCECOMP 2023]
-        ├── mifno.py            # Multiple-Input Fourier Neural Operator [Lehmann et al., JCP 2025]
-        ├── mlpmixer.py         # MLP-Mixer [Tolstikhin et al., NeurIPS 2021]
-        └── multimlpmixer.py    # Proposed Multi-MLP-Mixer (extension of MLP-Mixer in this paper)
+    └── models/                         # Model definitions
+        ├── afno.py                     # Adaptive Fourier Neural Operator [Guibas et al., ICLR 2022]
+        ├── convit.py                   # Convolutional Vision Transformer [d’Ascoli et al., ICML 2021]
+        ├── uno.py                      # U-shaped Neural Operator [Lehmann et al., UNCECOMP 2023]
+        ├── mifno.py                    # Multiple-Input Fourier Neural Operator [Lehmann et al., JCP 2025]
+        ├── mlpmixer.py                 # MLP-Mixer [Tolstikhin et al., NeurIPS 2021]
+        └── multimlpmixer.py            # Proposed Multi-MLP-Mixer (extension of MLP-Mixer in this paper)
 ```
 
 ---
@@ -88,10 +93,10 @@ Experiment settings such as model architecture and hyperparameters are defined i
 For example, in a multi-shot learning setting with cross-validation using the proposed Multi-MLP-Mixer model, you can configure `config.yaml` as follows:
 
 ```yaml
-data_path: data/exp_data/cv_data_multishot
-underground_data_path: data/exp_data/upperDepth_lonlat_400.pt
-mask_path: data/exp_data/sea_400.png
-result_base_dir: data/result
+data_path: data/cv_data_multishot
+underground_data_path: data/upperDepth_lonlat_400.pt
+mask_path: data/sea_400.png
+result_base_dir: result
 
 model_module: models.multimlpmixer
 model_class: Network
@@ -103,8 +108,8 @@ To run training and inference with cross-validation:
 python src/crossValidation.py
 ```
 
-* Trained models and experiment results will be saved in: `data/result/`
-* The directory name format is: `exp_YYMMDDHHMMSS_setting_model` (e.g., `exp_250918153030_multishot_multimlpmixer/`).
+* Trained models and experiment results will be saved in: `result/`
+* The directory name format is: `exp_YYMMDDHHMMSS_SETTING_MODEL` (e.g., `exp_250916000000_multishot_multimlpmixer/`).
 * Inside each directory:
 
   * `checkpoint/` : Model weights for each fold
@@ -115,7 +120,7 @@ python src/crossValidation.py
 * Saved weights can also be reused for inference. Example:
 
 ```bash
-python src/inference.py data/result/exp_250918153030_multishot_multimlpmixer
+python src/inference.py result/exp_250916000000_multishot_multimlpmixer
 ```
 
 ---
@@ -123,10 +128,12 @@ python src/inference.py data/result/exp_250918153030_multishot_multimlpmixer
 ### Example Results
 
 * **Loss Curves (Training / Validation)**
+  Results shown below are from the Multi-MLP-Mixer model on fold4.
 
 ![Loss Curves](./img/loss_curve_example.png)
 
 * **Quantitative Evaluation**
+  Results shown below are from the Multi-shot setting with the Multi-MLP-Mixer model.
 
 ```
 Individual Results: (31.784717, 0.937626), (31.973283, 0.943903), (32.270648, 0.945620), (31.583992, 0.943013), (31.749764, 0.947818), (31.664950, 0.946627), (32.522364, 0.947405), (32.312085, 0.945339), (33.213400, 0.947383), (32.790078, 0.940169)
@@ -168,7 +175,7 @@ Avarage Inference time: 1.3644 milliseconds
 You can also perform qualitative evaluation and visualization of the prediction results by running:
 
 ```bash
-python misc/visualize.py data/result/exp_250918153030_multishot_multimlpmixer/pred_data/cv0_pred.pt --show_colorbar 1
+python misc/visualize.py result/exp_250916000000_multishot_multimlpmixer/pred_data/cv0_pred.pt --show_colorbar 1
 ```
 
 * Arguments:

@@ -1,7 +1,7 @@
-data_path: data/exp_data/cv_data_multishot
-underground_data_path: data/exp_data/upperDepth_lonlat_400.pt
-mask_path: data/exp_data/sea_400.png 
-result_base_dir: data/result
+data_path: data/cv_data_multishot
+underground_data_path: data/upperDepth_lonlat_400.pt
+mask_path: data/sea_400.png 
+result_base_dir: result
 
 model_module: models.multimlpmixer
 model_class: Network

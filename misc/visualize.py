@@ -30,7 +30,7 @@ def infer_cv_index_from_pred_path(pred_data_path: str):
     return int(m.group(1))
 
 def default_true_data_path(mode: str, fold_idx: int):
-    return f"data/exp_data/cv_data_{mode}/crossValidation_all{fold_idx}/y_test.pt"
+    return f"data/cv_data_{mode}/crossValidation_all{fold_idx}/y_test.pt"
 
 def default_labels_path(mode: str):
     return f"data/labels_dictionary_{mode}.pkl"
