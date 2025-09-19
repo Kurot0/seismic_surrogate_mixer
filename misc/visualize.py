@@ -176,7 +176,7 @@ def save_scatter_plots(true_data_path, pred_data_path, mask_path, save_dir, mode
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("pred_data_path", type=str, help="Path to predicted data (e.g., result/exp_.../pred_data/cv0_pred.pt)")
+    parser.add_argument("pred_data_path", type=str, help="Path to predicted data")
     parser.add_argument("--true_data_path", type=str, default=None, help="Path to true data. If not specified, inferred automatically")
     parser.add_argument("--labels_path", type=str, default=None, help="Path to labels dictionary. If not specified, inferred automatically")
     parser.add_argument("--save_dir", type=str, default=None, help="Output directory for images. Default: create 'images/' under the result directory of pred_data_path")
