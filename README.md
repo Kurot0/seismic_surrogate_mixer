@@ -42,7 +42,7 @@ pip install -r requirements.txt
 
 Download and extract all files from [google drive](https://drive.google.com/drive/folders/1H4WSzDXt68DseMZUBuZzXn6YRqCF3Ztn?usp=drive_link) and place them under the `./` folder.
 
-The `result/` directory in the google drive contains the pretrained weights used in the experiments reported in the paper. 
+The `result/` directory in the google drive contains the pretrained weights used in the experiments reported in the paper.
 In particular, for the one-shot Multi-MLP-Mixer model, three variants trained with different dropout rates (0.1, 0.3, 0.5) are included.
 
 ---
@@ -64,6 +64,10 @@ seismic_surrogate_mixer/
 │   └── labels_dictionary_oneshot.pkl   # Label data for one-shot dataset
 │
 ├── result/                             # Trained models & result files
+│   ├── exp_250916000000_multishot_mlpmixer/
+│   ├── exp_250916000000_oneshot_multimlpmixer_0.1/
+│   ├── exp_250916000000_oneshot_multimlpmixer_0.3/
+│   └── exp_250916000000_oneshot_multimlpmixer_0.5/
 │
 ├── misc/
 │   └── visualize.py                    # Visualization script
@@ -112,28 +116,32 @@ python src/crossValidation.py
 * The directory name format is: `exp_YYMMDDHHMMSS_SETTING_MODEL` (e.g., `exp_250916000000_multishot_multimlpmixer/`).
 * Inside each directory:
 
-  * `checkpoint/` : Model weights for each fold
-  * `loss_graph/` : Loss curves for each fold
-  * `pred_data/` : Inference results
+  * `checkpoint/` : Model weights for each fold (`cv*_model.pth`)
+  * `loss_graph/` : Loss curves for each fold (`cv*_loss.png`)
+  * `pred_data/` : Inference results (`cv*_pred.pt`)
   * `config.yaml` : Copy of experiment configuration
   * `result.txt` : Quantitative evaluation results
-* Saved weights can also be reused for inference. Example:
+
+Saved weights can also be reused for inference. Example:
 
 ```bash
 python src/inference.py result/exp_250916000000_multishot_multimlpmixer
 ```
+
+When running `src/crossValidation.py`, the program loads experiment settings from the `config.yaml` located at the root of the repository.
+When running `src/inference.py`, the program instead loads the `config.yaml` located in the specified `result/` directory, and performs inference for all folds.
 
 ---
 
 ### Example Results
 
 * **Loss Curves (Training / Validation)**
-  Results shown below are from the Multi-MLP-Mixer model on fold4.
+  The following is an example from `exp_250916000000_multishot_mlpmixer/loss_graph/cv4_loss.png`.
 
 ![Loss Curves](./img/loss_curve_example.png)
 
 * **Quantitative Evaluation**
-  Results shown below are from the Multi-shot setting with the Multi-MLP-Mixer model.
+  The following is an example from `exp_250916000000_multishot_mlpmixer/result.txt`.
 
 ```
 Individual Results: (31.784717, 0.937626), (31.973283, 0.943903), (32.270648, 0.945620), (31.583992, 0.943013), (31.749764, 0.947818), (31.664950, 0.946627), (32.522364, 0.947405), (32.312085, 0.945339), (33.213400, 0.947383), (32.790078, 0.940169)
@@ -178,11 +186,29 @@ You can also perform qualitative evaluation and visualization of the prediction 
 python misc/visualize.py result/exp_250916000000_multishot_multimlpmixer/pred_data/cv0_pred.pt --show_colorbar 1
 ```
 
-* Arguments:
+**Arguments:**
 
-  * `pred_data_path` (positional): Path to the model prediction file to visualize
-  * `--apply_mask`: If set to a nonzero value, no mask is applied
-  * `--show_colorbar`: If set to a nonzero value, a colorbar is displayed
+* `pred_data_path <path>` *(positional)*: Path to the prediction data to visualize.
+* `--true_data_path <path>` *(optional)*: Path to the ground-truth data used for scatter plots. If omitted, it is inferred automatically from `pred_data_path`.
+* `--labels_path <path>` *(optional)*: Path to the labels dictionary pickle. If omitted, it defaults to the appropriate label file under `data/`.
+* `--save_dir <dir>` *(optional)*: Output directory for images. Default: create `images/` under the result directory of `pred_data_path`.
+* `--mask_path <path>` *(optional, default: `data/sea_400.png`)*: Path to the sea-area mask image used to filter pixels.
+* `--apply_mask <int>` *(optional, default: `0`)*: Mask application flag. `0` = apply the mask; non-zero = do not apply the mask.
+* `--show_colorbar <int>` *(optional, default: `0`)*: Colorbar flag. `0` = hide; non-zero = show a colorbar in single-period images.
+
+**Outputs:**
+
+* The script creates the following directory structure under the save directory:
+
+  * `3second/`, `5second/`, `7second/`, `10second/`: Per-period subdirectories.
+  * `concat/`: Stores horizontally concatenated images across all periods.
+
+* **File naming:**
+
+  * Per-period ground-motion images: `MODEL_SCENARIO_PERIOD.png`
+  * Per-period scatter plots: `MODEL_SCENARIO_PERIOD_sp.png`
+  * Concatenated ground-motion image across all periods: `MODEL_SCENARIO_concat.png`
+  * Concatenated scatter plot across all periods: `MODEL_SCENARIO_concat_sp.png`
 
 * **Seismic Ground Motion Images (Ground truth | Prediction)**
 
