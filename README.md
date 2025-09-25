@@ -113,7 +113,7 @@ python src/crossValidation.py
 ```
 
 * Trained models and experiment results will be saved in: `result/`
-* The directory name format is: `exp_YYMMDDHHMMSS_SETTING_MODEL` (e.g., `exp_250916000000_multishot_multimlpmixer/`).
+* The directory name format is: `exp_{YYMMDDHHMMSS}_{SETTING}_{MODEL}` (e.g., `exp_250916000000_multishot_multimlpmixer/`).
 * Inside each directory:
 
   * `checkpoint/` : Model weights for each fold (`cv*_model.pth`)
@@ -188,27 +188,57 @@ python misc/visualize.py result/exp_250916000000_multishot_multimlpmixer/pred_da
 
 **Arguments:**
 
-* `pred_data_path <path>` *(positional)*: Path to the prediction data to visualize.
-* `--true_data_path <path>` *(optional)*: Path to the ground-truth data used for scatter plots. If omitted, it is inferred automatically from `pred_data_path`.
-* `--labels_path <path>` *(optional)*: Path to the labels dictionary pickle. If omitted, it defaults to the appropriate label file under `data/`.
-* `--save_dir <dir>` *(optional)*: Output directory for images. Default: create `images/` under the result directory of `pred_data_path`.
+* `pred_data_path <path>` *(positional)*: Path to the prediction tensor for a specific fold (e.g., `.../pred_data/cv0_pred.pt`).
+* `--true_data_path <path>` *(optional)*: Path to the ground-truth tensor for scatter plots. If omitted, it is inferred automatically from the mode & fold in `pred_data_path`.
+* `--labels_path <path>` *(optional)*: Path to the labels dictionary pickle (e.g., `data/labels_dictionary_multishot.pkl`). If omitted, it is inferred automatically.
+* `--save_dir <dir>` *(optional)*: Root directory to save images. Defaults to a path inferred from `pred_data_path` and fold (creates `images_cv{FOLD}/` under the experiment directory). For example, `.../pred_data/cv0_pred.pt` → `.../images_cv0/`.
 * `--mask_path <path>` *(optional, default: `data/sea_400.png`)*: Path to the sea-area mask image used to filter pixels.
 * `--apply_mask <int>` *(optional, default: `0`)*: Mask application flag. `0` = apply the mask; non-zero = do not apply the mask.
 * `--show_colorbar <int>` *(optional, default: `0`)*: Colorbar flag. `0` = hide; non-zero = show a colorbar in single-period images.
 
 **Outputs:**
 
-* The script creates the following directory structure under the save directory:
+* **Save location**
 
-  * `3second/`, `5second/`, `7second/`, `10second/`: Per-period subdirectories.
-  * `concat/`: Stores horizontally concatenated images across all periods.
+  * If `--save_dir` is omitted, outputs are saved under `images_cv{FOLD}/` placed next to the experiment directory inferred from `pred_data_path`.
 
-* **File naming:**
+* **Directory layout** (per run):
 
-  * Per-period ground-motion images: `MODEL_SCENARIO_PERIOD.png`
-  * Per-period scatter plots: `MODEL_SCENARIO_PERIOD_sp.png`
-  * Concatenated ground-motion image across all periods: `MODEL_SCENARIO_concat.png`
-  * Concatenated scatter plot across all periods: `MODEL_SCENARIO_concat_sp.png`
+  ```text
+  images_cv{FOLD}/
+  ├── true/
+  │   ├── 3second/
+  │   ├── 5second/
+  │   ├── 7second/
+  │   └── 10second/
+  ├── pred/
+  │   ├── 3second/
+  │   ├── 5second/
+  │   ├── 7second/
+  │   └── 10second/
+  └── concat/
+  ```
+
+* **Per-period files** (saved under `true/` or `pred/` by period):
+
+  * Ground-motion images
+
+    * True: `true_{SCENARIO}_{SEC}.png`
+    * Pred: `{MODEL}_{SCENARIO}_{SEC}.png`
+  * Scatter plots
+
+    * True row (x=true, y=true): `true_{SCENARIO}_{SEC}_sp.png`
+    * Pred row (x=true, y=pred): `{MODEL}_{SCENARIO}_{SEC}_sp.png`
+
+* **Concatenated across all periods** (saved under `concat/`):
+
+  * Ground-motion images: `{MODEL}_{SCENARIO}_concat.png`
+
+    * 2-row grid: **top = Ground truth**, **bottom = Prediction**
+    * Each tile has a header label: "Ground truth - {SEC} s" / "Prediction - {SEC} s"
+  * Scatter plots: `{MODEL}_{SCENARIO}_concat_sp.png`
+
+    * Same 2-row layout as above.
 
 * **Seismic Ground Motion Images (Ground truth | Prediction)**
 
