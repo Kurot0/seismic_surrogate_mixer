@@ -240,14 +240,14 @@ python misc/visualize.py result/exp_250916000000_multishot_multimlpmixer/pred_da
 
     * Same 2-row layout as above.
 
-* **Seismic Ground Motion Images (Ground truth | Prediction)**
+**Example Figures**
 
-|                  Ground Truth                 |                    Prediction                   |
-| :-------------------------------------------: | :---------------------------------------------: |
-| <img src="./img/seismic_gt.png" width="300"/> | <img src="./img/seismic_pred.png" width="300"/> |
+**Scenario:** `AF010_h01_adm_nm_vr1_fm1_sd1_rrrr`
 
-* **Scatter Plots (Ground truth | Prediction)**
+* **Seismic Ground Motion Images (Concatenated)**
 
-|                  Ground Truth                 |                    Prediction                   |
-| :-------------------------------------------: | :---------------------------------------------: |
-| <img src="./img/scatter_gt.png" width="300"/> | <img src="./img/scatter_pred.png" width="300"/> |
+<img src="./img/seismic.png" width="800"/>
+
+* **Scatter Plots (Concatenated)**
+
+<img src="./img/scatter.png" width="800"/>
